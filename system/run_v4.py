@@ -11,9 +11,9 @@ import yfinance as yf
 PLATFORMS = ["MSFT", "GOOGL", "META"]
 AI_SEMIS  = ["NVDA", "AMD"]
 EQUIP     = ["KLAC"]
-MEMORY    = ["MU", "WDC", "STX", "SNDK"]   # basket B
-INFRA_OPT = ["VRT"]                        # optional (may be bad on GH)
-
+MEMORY    = ["MU", "WDC", "STX"]
+OPT_TICKERS = ["VRT", "SNDK"]   # optional tickers (no hard fail)
+INFRA_OPT = ["VRT"]            # lăsăm restul codului compatibil
 DEF = ["XLV", "IEF"]
 
 # Macro proxies
@@ -21,7 +21,7 @@ QQQ = "QQQ"
 SPY = "SPY"
 SMH = "SMH"  # for RS comparison (memory vs semis proxy)
 
-START = "2006-01-01"
+START = "2012-05-21"
 END = None
 
 # Macro gates
@@ -136,7 +136,7 @@ def equal_weight_index(px: pd.DataFrame, tickers: list[str]) -> pd.Series:
 # =========================
 
 ALL = sorted(set(
-    PLATFORMS + AI_SEMIS + EQUIP + MEMORY + INFRA_OPT + DEF + [QQQ, SPY, SMH]
+    PLATFORMS + AI_SEMIS + EQUIP + MEMORY + OPT_TICKERS + DEF + [QQQ, SPY, SMH]
 ))
 
 px = download_prices(ALL, START, END).dropna(how="all").ffill()
@@ -160,10 +160,11 @@ if bad_core:
     raise RuntimeError(f"Data coverage too low for CORE tickers: {bad_core} — see outputs/diagnostics.csv")
 
 # Infra optional
-infra_enabled = True
-for t in INFRA_OPT:
+for t in OPT_TICKERS:
     if t in coverage.index and float(coverage[t]) < 0.80:
-        infra_enabled = False
+        if t == "VRT":
+            infra_enabled = False
+
 
 # Returns / weekly
 ret_d = px.pct_change().fillna(0.0)
