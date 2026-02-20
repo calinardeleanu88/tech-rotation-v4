@@ -1,0 +1,15 @@
+{
+  "period_start": "2012-05-21",
+  "period_end": "2026-02-20",
+  "cagr": 0.2687582437064433,
+  "maxdd": -0.3221134353834103,
+  "vol": 0.21157063040483767,
+  "sharpe": 1.2340308677287202,
+  "sortino": 1.6589468751116017,
+  "turnover_annual": 7.7634403540851125,
+  "avg_def_weight": 0.3434718981219217,
+  "avg_risk_weight": 0.6565281018780783,
+  "churn_flags": 2318,
+  "infra_enabled": false,
+  "latest_date": "2026-02-20"
+}
