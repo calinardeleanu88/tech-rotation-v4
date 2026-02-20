@@ -359,12 +359,20 @@ for dt in px.index:
     b_plat = W_PLAT * rb
     b_ai   = W_AI   * rb
     b_eq   = W_EQ   * rb
-    b_inf  = (W_INF * rb) if infra_enabled else 0.0
+    # Infra budget only when VRT exists AND is eligible TODAY (time-varying)
+    vrt_has_price = ("VRT" in px.columns) and pd.notna(px.loc[dt, "VRT"])
+    vrt_is_on = ("VRT" in state.columns) and bool(state.loc[dt, "VRT"])
+    infra_active = bool(infra_enabled and vrt_has_price and vrt_is_on)
+
+    b_inf = (W_INF * rb) if infra_active else 0.0
 
     mem_cap = memory_weight_cap(dt) * rb
     b_mem = mem_cap
 
     unalloc = 0.0
+    # If infra is inactive today, re-route its intended budget to Platforms (instead of leaking to DEF)
+    if (W_INF * rb) > 0 and (not infra_active):
+        b_plat += (W_INF * rb)
 
     alloc = alloc_bucket(dt, PLATFORMS, b_plat)
     if alloc is None: unalloc += b_plat
@@ -382,11 +390,7 @@ for dt in px.index:
         for k,v in alloc.items(): row[k] += v
 
     if b_inf > 0:
-        t = "VRT"
-        if t in state.columns and bool(state.loc[dt, t]):
-            row[t] += b_inf
-        else:
-            unalloc += b_inf
+    row["VRT"] += b_inf
 
     if b_mem > 0:
         alloc = alloc_bucket(dt, MEMORY, b_mem)
@@ -522,7 +526,27 @@ memory_debug = {
     "mem_rs_value": float(mem_rs.loc[latest_dt]),
     "mem_roc_3m": float(mem_roc.loc[latest_dt]),
 }
+latest_dt = px.index[-1]
 
+elig = {}
+for name, bucket in {
+    "platforms": PLATFORMS,
+    "ai_semis": AI_SEMIS,
+    "equip": EQUIP,
+    "memory": MEMORY,
+    "infra": (["VRT"] if ("VRT" in state.columns) else []),
+}.items():
+    elig[name] = [t for t in bucket if (t in state.columns and bool(state.loc[latest_dt, t]))]
+
+elig_debug = {
+    "date": str(latest_dt.date()),
+    "risk_budget": float(risk_budget.loc[latest_dt]),
+    "eligible": elig,
+    "state_counts_on": {t: int(state[t].tail(30).sum()) for t in state.columns},  # câte zile ON în ultimele ~30
+}
+
+with open(os.path.join(OUTDIR, "eligibility_debug.json"), "w") as f:
+    json.dump(elig_debug, f, indent=2)
 with open(os.path.join(OUTDIR, "summary.json"), "w") as f:
     json.dump(summary, f, indent=2)
 
