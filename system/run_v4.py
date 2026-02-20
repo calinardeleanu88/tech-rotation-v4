@@ -390,7 +390,7 @@ for dt in px.index:
         for k,v in alloc.items(): row[k] += v
 
     if b_inf > 0:
-    row["VRT"] += b_inf
+        row["VRT"] += b_inf
 
     if b_mem > 0:
         alloc = alloc_bucket(dt, MEMORY, b_mem)
