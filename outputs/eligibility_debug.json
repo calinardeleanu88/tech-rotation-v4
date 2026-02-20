@@ -1,0 +1,31 @@
+{
+  "date": "2026-02-20",
+  "risk_budget": 1.0,
+  "eligible": {
+    "platforms": [],
+    "ai_semis": [
+      "NVDA"
+    ],
+    "equip": [],
+    "memory": [
+      "MU",
+      "WDC",
+      "STX"
+    ],
+    "infra": [
+      "VRT"
+    ]
+  },
+  "state_counts_on": {
+    "MSFT": 0,
+    "GOOGL": 25,
+    "META": 5,
+    "NVDA": 30,
+    "AMD": 24,
+    "KLAC": 21,
+    "MU": 30,
+    "WDC": 30,
+    "STX": 30,
+    "VRT": 26
+  }
+}
