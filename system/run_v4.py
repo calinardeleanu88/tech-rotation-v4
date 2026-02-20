@@ -2,6 +2,8 @@ import os, json, time
 import numpy as np
 import pandas as pd
 import yfinance as yf
+import requests
+from io import StringIO
 
 # =========================
 # CONFIG
@@ -11,9 +13,11 @@ import yfinance as yf
 PLATFORMS = ["MSFT", "GOOGL", "META"]
 AI_SEMIS  = ["NVDA", "AMD"]
 EQUIP     = ["KLAC"]
-MEMORY    = ["MU", "WDC", "STX"]
-OPT_TICKERS = ["VRT", "SNDK"]   # optional tickers (no hard fail)
-INFRA_OPT = ["VRT"]            # lăsăm restul codului compatibil
+
+# NOTE: SNDK is too new / low coverage → keep it OUT for now
+MEMORY    = ["MU", "WDC", "STX"]          # basket B (stable)
+INFRA_OPT = ["VRT"]                        # will be sourced from Stooq if Yahoo coverage low
+
 DEF = ["XLV", "IEF"]
 
 # Macro proxies
@@ -23,6 +27,10 @@ SMH = "SMH"  # for RS comparison (memory vs semis proxy)
 
 START = "2012-05-21"
 END = None
+
+# Coverage thresholds
+COVERAGE_MIN_CORE = 0.80
+COVERAGE_MIN_INFRA = 0.80   # if VRT via Stooq reaches this, enable infra
 
 # Macro gates
 QQQ_EMA_W = 30
@@ -54,11 +62,11 @@ W_MEM  = 0.20
 
 # Memory guard parameters (B)
 MEM_TREND_EMA_W = 40
-MEM_RS_WIN_D = 63          # 12 weeks-ish
-MEM_ROC_D = 63             # 3 months ROC
-MEM_SHOCK_LOOKBACK_W = 8   # 8 weeks
-MEM_SHOCK_DD = -0.20       # -20%
-MEM_NEG_WEEKS = 4          # 4 consecutive red weeks
+MEM_RS_WIN_D = 63
+MEM_ROC_D = 63
+MEM_SHOCK_LOOKBACK_W = 8
+MEM_SHOCK_DD = -0.20
+MEM_NEG_WEEKS = 4
 
 OUTDIR = "outputs"
 os.makedirs(OUTDIR, exist_ok=True)
@@ -67,7 +75,7 @@ os.makedirs(OUTDIR, exist_ok=True)
 # Helpers
 # =========================
 
-def download_prices(tickers, start, end, tries=3, sleep_s=2):
+def download_prices_yf(tickers, start, end, tries=3, sleep_s=2):
     last_err = None
     for _ in range(tries):
         try:
@@ -89,6 +97,26 @@ def download_prices(tickers, start, end, tries=3, sleep_s=2):
             time.sleep(sleep_s)
     raise RuntimeError(f"Failed to download prices after {tries} tries: {last_err}")
 
+def fetch_stooq_close(symbol: str) -> pd.Series:
+    """
+    Stooq daily CSV:
+      https://stooq.com/q/d/l/?s=vrt.us&i=d
+    Returns a Series indexed by date with Close prices (float).
+    """
+    url = f"https://stooq.com/q/d/l/?s={symbol}&i=d"
+    r = requests.get(url, timeout=30)
+    r.raise_for_status()
+    text = r.text.strip()
+    if not text or "Date,Open,High,Low,Close,Volume" not in text:
+        raise RuntimeError(f"Unexpected Stooq response for {symbol}")
+
+    df = pd.read_csv(StringIO(text))
+    df["Date"] = pd.to_datetime(df["Date"])
+    df = df.sort_values("Date")
+    s = pd.Series(df["Close"].values, index=df["Date"], name="VRT").astype(float)
+    s = s[~s.index.duplicated(keep="last")]
+    return s
+
 def ema(series, span):
     return series.ewm(span=span, adjust=False).mean()
 
@@ -98,7 +126,8 @@ def normalize_positive(s: pd.Series) -> pd.Series:
     return s*0.0 if tot <= 0 else s/tot
 
 def add_def(row: pd.Series, amount: float):
-    if amount <= 0: return
+    if amount <= 0:
+        return
     row["XLV"] += amount * DEF_XLV
     row["IEF"] += amount * DEF_IEF
 
@@ -122,7 +151,8 @@ def sortino(r: pd.Series) -> float:
     return float((r.mean()/d) * np.sqrt(252)) if d != 0 else np.nan
 
 def trading_days_between(idx: pd.DatetimeIndex, a, b) -> int:
-    if a is None: return 10**9
+    if a is None:
+        return 10**9
     return int(((idx > a) & (idx <= b)).sum())
 
 def equal_weight_index(px: pd.DataFrame, tickers: list[str]) -> pd.Series:
@@ -136,15 +166,37 @@ def equal_weight_index(px: pd.DataFrame, tickers: list[str]) -> pd.Series:
 # =========================
 
 ALL = sorted(set(
-    PLATFORMS + AI_SEMIS + EQUIP + MEMORY + OPT_TICKERS + DEF + [QQQ, SPY, SMH]
+    PLATFORMS + AI_SEMIS + EQUIP + MEMORY + INFRA_OPT + DEF + [QQQ, SPY, SMH]
 ))
 
-px = download_prices(ALL, START, END).dropna(how="all").ffill()
+px = download_prices_yf(ALL, START, END).dropna(how="all").ffill()
 if px.empty:
     raise RuntimeError("Price data empty.")
 
-# Diagnostics coverage
+# --- VRT fallback: if Yahoo coverage low, replace with Stooq VRT.US ---
+# compute preliminary coverage
+coverage_pre = px.notna().mean()
+vrt_cov_pre = float(coverage_pre.get("VRT", 0.0))
+
+used_stooq_vrt = False
+stooq_err = None
+
+if "VRT" in px.columns and vrt_cov_pre < COVERAGE_MIN_INFRA:
+    try:
+        vrt_s = fetch_stooq_close("vrt.us")
+        # align to px index
+        vrt_s = vrt_s.reindex(px.index).ffill()
+        # replace column
+        px["VRT"] = vrt_s
+        used_stooq_vrt = True
+    except Exception as e:
+        stooq_err = str(e)
+        used_stooq_vrt = False
+
+# Recompute coverage after possible replacement
 coverage = px.notna().mean()
+
+# Diagnostics
 diag = pd.DataFrame({
     "ticker": coverage.index,
     "coverage": coverage.values,
@@ -153,18 +205,16 @@ diag = pd.DataFrame({
 })
 diag.to_csv(os.path.join(OUTDIR, "diagnostics.csv"), index=False)
 
-# Hard fail if core missing badly (not infra optional)
+# Hard fail if CORE missing badly (VRT is optional; do NOT include)
 CORE = set(PLATFORMS + AI_SEMIS + EQUIP + MEMORY + DEF + [QQQ, SPY, SMH])
-bad_core = [t for t in coverage.index if (t in CORE and float(coverage[t]) < 0.80)]
+bad_core = [t for t in coverage.index if (t in CORE and float(coverage[t]) < COVERAGE_MIN_CORE)]
 if bad_core:
     raise RuntimeError(f"Data coverage too low for CORE tickers: {bad_core} — see outputs/diagnostics.csv")
 
-# Infra optional
-for t in OPT_TICKERS:
-    if t in coverage.index and float(coverage[t]) < 0.80:
-        if t == "VRT":
-            infra_enabled = False
-
+# Infra enabled if VRT coverage OK
+infra_enabled = False
+if "VRT" in coverage.index and float(coverage["VRT"]) >= COVERAGE_MIN_INFRA:
+    infra_enabled = True
 
 # Returns / weekly
 ret_d = px.pct_change().fillna(0.0)
@@ -181,31 +231,28 @@ spy_w = px_w[SPY]
 qqq_gate_w = (qqq_w > ema(qqq_w, QQQ_EMA_W)).astype(bool)
 spy_gate_w = (spy_w > ema(spy_w, SPY_EMA_W)).astype(bool)
 
-# Align to daily via ffill
 qqq_gate = qqq_gate_w.reindex(px.index, method="ffill").fillna(False)
 spy_gate = spy_gate_w.reindex(px.index, method="ffill").fillna(False)
 
-# RiskBudget: 1.0 / 0.5 / 0.0
 risk_budget = pd.Series(0.0, index=px.index)
 risk_budget[spy_gate & (~qqq_gate)] = 0.5
-risk_budget[qqq_gate] = 1.0  # if qqq_gate True => 1.0 regardless of spy_gate
+risk_budget[qqq_gate] = 1.0
 
 # =========================
 # Internal stock eligibility (daily confirm + weekly gate)
 # =========================
 
-# Weekly gate for individual stocks (trend filter)
+UNIVERSE = PLATFORMS + AI_SEMIS + EQUIP + MEMORY + (INFRA_OPT if infra_enabled else [])
+
 weekly_gate = {}
-for t in (PLATFORMS + AI_SEMIS + EQUIP + MEMORY + (INFRA_OPT if infra_enabled else [])):
+for t in UNIVERSE:
     w = px_w[t]
     weekly_gate[t] = (w > ema(w, WEEKLY_GATE_EMA_W)).astype(bool).reindex(px.index, method="ffill").fillna(False)
 weekly_gate = pd.DataFrame(weekly_gate, index=px.index)
 
-# Daily confirm: SMA20 and 7/10 ON, 3/10 OFF
 sma = px.rolling(DAILY_SMA).mean()
 above = (px > sma).astype(bool).fillna(False)
 cnt = above.rolling(CONF_WIN).sum()
-
 confirm_on  = (cnt >= CONF_ON).fillna(False)
 confirm_off = (cnt <= CONF_OFF).fillna(False)
 
@@ -217,15 +264,15 @@ def build_state(ticker: str) -> pd.Series:
     st = pd.Series(False, index=px.index, dtype=bool)
     on = False
     for dt in px.index:
-        if bool(off_sig.loc[dt]): on = False
-        elif bool(on_sig.loc[dt]): on = True
+        if bool(off_sig.loc[dt]):
+            on = False
+        elif bool(on_sig.loc[dt]):
+            on = True
         st.loc[dt] = on
     return st
 
-STATE_UNI = (PLATFORMS + AI_SEMIS + EQUIP + MEMORY + (INFRA_OPT if infra_enabled else []))
-state = pd.DataFrame({t: build_state(t) for t in STATE_UNI}, index=px.index)
+state = pd.DataFrame({t: build_state(t) for t in UNIVERSE}, index=px.index)
 
-# Relative strength measure (3M)
 rs = px.pct_change(RS_WIN_D).replace([np.inf, -np.inf], np.nan).fillna(0.0)
 
 # =========================
@@ -236,20 +283,16 @@ mem_idx = equal_weight_index(px, MEMORY)
 mem_w = mem_idx.resample("W-FRI").last().ffill()
 mem_ema40w = ema(mem_w, MEM_TREND_EMA_W)
 
-# (A) Trend hard kill
 mem_trend_ok_w = (mem_w > mem_ema40w).astype(bool)
 mem_trend_ok = mem_trend_ok_w.reindex(px.index, method="ffill").fillna(False)
 
-# (B) RS vs SMH (soft cut)
 ratio = (mem_idx / px[SMH]).replace([np.inf, -np.inf], np.nan).ffill()
 mem_rs = ratio.pct_change(MEM_RS_WIN_D).fillna(0.0)
 mem_rs_ok = (mem_rs > 0)
 
-# (C) Momentum cap (ROC 3M)
 mem_roc = mem_idx.pct_change(MEM_ROC_D).fillna(0.0)
 mem_mom_ok = (mem_roc > 0)
 
-# (D) Shock trigger
 lookback = MEM_SHOCK_LOOKBACK_W
 mem_roll_peak = mem_w.rolling(lookback).max()
 mem_dd_8w = (mem_w / mem_roll_peak - 1.0).fillna(0.0)
@@ -262,16 +305,16 @@ mem_shock_w = (shock_dd | neg_streak).astype(bool)
 mem_shock = mem_shock_w.reindex(px.index, method="ffill").fillna(False)
 
 def memory_weight_cap(dt) -> float:
-    if not bool(mem_trend_ok.loc[dt]):  # hard kill
+    if not bool(mem_trend_ok.loc[dt]):
         return 0.0
-    if bool(mem_shock.loc[dt]):         # panic kill
+    if bool(mem_shock.loc[dt]):
         return 0.0
 
     cap = W_MEM
     if not bool(mem_rs_ok.loc[dt]):
         cap = min(cap, W_MEM * 0.5)
     if not bool(mem_mom_ok.loc[dt]):
-        cap = min(cap, 0.12)  # 10–12%
+        cap = min(cap, 0.12)
     return cap
 
 # =========================
@@ -291,7 +334,7 @@ def alloc_bucket(dt, names, budget):
     return {t: budget*float(scores.loc[t]) for t in elig}
 
 for dt in px.index:
-    rb = float(risk_budget.loc[dt])  # 0/0.5/1
+    rb = float(risk_budget.loc[dt])
     row = w_target.loc[dt]
     row[:] = 0.0
 
@@ -325,7 +368,7 @@ for dt in px.index:
         for k,v in alloc.items(): row[k] += v
 
     if b_inf > 0:
-        t = INFRA_OPT[0]
+        t = "VRT"
         if t in state.columns and bool(state.loc[dt, t]):
             row[t] += b_inf
         else:
@@ -338,7 +381,6 @@ for dt in px.index:
         else:
             for k,v in alloc.items(): row[k] += v
 
-    # "Memories exit first": if mem is killed, half of intended mem sleeve to platforms, half to DEF
     if rb > 0 and (mem_cap == 0.0) and (W_MEM * rb > 0):
         lost = (W_MEM * rb)
         boost = 0.5 * lost
@@ -399,7 +441,6 @@ for dt in exec_days:
         w_exec.loc[dt] = prop
         prev_exec = prop
 
-# hard normalize
 row_sums = w_exec.fillna(0.0).sum(axis=1)
 zero_rows = row_sums == 0
 if zero_rows.any():
@@ -442,6 +483,8 @@ summary = {
     "avg_risk_weight": float(1.0 - w_daily[DEF].sum(axis=1).mean()),
     "churn_flags": int(churn_flags),
     "infra_enabled": bool(infra_enabled),
+    "used_stooq_vrt": bool(used_stooq_vrt),
+    "stooq_vrt_error": stooq_err,
     "latest_date": str(equity.index[-1].date()),
 }
 
@@ -488,7 +531,7 @@ pd.DataFrame({"equity": eq_qqq, "ret": qqq_ret}).to_csv(os.path.join(OUTDIR, "eq
 pd.DataFrame({"equity": eq_spy, "ret": spy_ret}).to_csv(os.path.join(OUTDIR, "equity_spy.csv"))
 
 # =========================
-# Run Monitor output (macro-monitor style)
+# Run Monitor output
 # =========================
 
 def fmt_pct(x):
@@ -498,32 +541,28 @@ def line():
     print("="*72)
 
 line()
-print("===== TECH ROTATION v4 (Macro + Internal + Memory Guard B) =====")
+print("===== TECH ROTATION v4.0.1 (Stooq fallback for VRT) =====")
 print(f"Period: {summary['period_start']} → {summary['period_end']}")
-print(f"Costs: {TC_BPS_PER_1X} bps per 1.0 abs weight change | Cooldown: {COOLDOWN_DAYS}d | Min-change: {int(MIN_CHANGE_TO_TRADE*100)}%")
-print(f"Infra enabled: {infra_enabled} | Universe: Platforms={PLATFORMS}, AI={AI_SEMIS}, Equip={EQUIP}, Mem={MEMORY}, DEF={DEF}")
+print(f"Costs: {TC_BPS_PER_1X} bps | Cooldown: {COOLDOWN_DAYS}d | Min-change: {int(MIN_CHANGE_TO_TRADE*100)}%")
+print(f"Infra enabled: {infra_enabled} | VRT via Stooq: {used_stooq_vrt} | Stooq err: {stooq_err}")
 line()
 
 print("===== MACRO REGIME =====")
-print(f"Date: {macro_debug['date']}")
-print(f"QQQ gate (EMA{QQQ_EMA_W}W): {'ON' if macro_debug['qqq_gate'] else 'OFF'}")
-print(f"SPY gate (EMA{SPY_EMA_W}W): {'ON' if macro_debug['spy_gate'] else 'OFF'}")
-print(f"RISK BUDGET: {macro_debug['risk_budget']:.1f}  | Emergency today: {macro_debug['emergency_today']} | Traded today: {macro_debug['traded_today']}")
+print(f"Date: {macro_debug['date']} | RISK BUDGET: {macro_debug['risk_budget']:.1f}")
+print(f"QQQ gate (EMA{QQQ_EMA_W}W): {'ON' if macro_debug['qqq_gate'] else 'OFF'} | SPY gate (EMA{SPY_EMA_W}W): {'ON' if macro_debug['spy_gate'] else 'OFF'}")
+print(f"Emergency today: {macro_debug['emergency_today']} | Traded today: {macro_debug['traded_today']}")
 line()
 
 print("===== MEMORY GUARD =====")
-print(f"Trend OK (EMA{MEM_TREND_EMA_W}W): {memory_debug['mem_trend_ok']}")
-print(f"RS vs SMH OK: {memory_debug['mem_rs_ok']}  | RS value: {memory_debug['mem_rs_value']:+.4f}")
-print(f"Momentum OK (ROC 3M): {memory_debug['mem_mom_ok']} | ROC: {memory_debug['mem_roc_3m']:+.4f}")
-print(f"Shock trigger: {memory_debug['mem_shock']}")
-print(f"Memory weight cap (base, before RiskBudget scaling): {memory_debug['mem_weight_cap_base']:.3f}")
+print(f"Trend OK: {memory_debug['mem_trend_ok']} | RS OK: {memory_debug['mem_rs_ok']} | Mom OK: {memory_debug['mem_mom_ok']} | Shock: {memory_debug['mem_shock']}")
+print(f"Mem cap base: {memory_debug['mem_weight_cap_base']:.3f} | RS: {memory_debug['mem_rs_value']:+.4f} | ROC3M: {memory_debug['mem_roc_3m']:+.4f}")
 line()
 
 print("===== RESULTS =====")
 print(f"Strategy CAGR: {fmt_pct(summary['cagr'])} | MaxDD: {fmt_pct(summary['maxdd'])} | Vol: {fmt_pct(summary['vol'])} | Sharpe: {summary['sharpe']:.2f} | Sortino: {summary['sortino']:.2f}")
 print(f"QQQ B&H  CAGR: {fmt_pct(cagr(eq_qqq))} | MaxDD: {fmt_pct(max_drawdown(eq_qqq))}")
 print(f"SPY B&H  CAGR: {fmt_pct(cagr(eq_spy))} | MaxDD: {fmt_pct(max_drawdown(eq_spy))}")
-print(f"Turnover (approx): {summary['turnover_annual']:.2f}x | Avg DEF: {summary['avg_def_weight']:.2f} | Avg RISK: {summary['avg_risk_weight']:.2f} | Churn flags: {summary['churn_flags']}")
+print(f"Turnover (approx): {summary['turnover_annual']:.2f}x | Avg DEF: {summary['avg_def_weight']:.2f} | Churn flags: {summary['churn_flags']}")
 line()
 
 print("===== LATEST EXEC WEIGHTS =====")
@@ -532,4 +571,4 @@ lw = lw[lw > 1e-6]
 for k, v in lw.items():
     print(f"{k:>6}: {v:6.3f}")
 line()
-print("Outputs written to /outputs (summary.json, macro_debug.json, memory_debug.json, recent_exec_weights.csv, latest_exec_weights.json)")
+print("Outputs written to /outputs")
