@@ -211,10 +211,24 @@ bad_core = [t for t in coverage.index if (t in CORE and float(coverage[t]) < COV
 if bad_core:
     raise RuntimeError(f"Data coverage too low for CORE tickers: {bad_core} — see outputs/diagnostics.csv")
 
-# Infra enabled if VRT coverage OK
+# Infra enabled: use RECENT coverage (because VRT is newer than START)
 infra_enabled = False
-if "VRT" in coverage.index and float(coverage["VRT"]) >= COVERAGE_MIN_INFRA:
-    infra_enabled = True
+if "VRT" in px.columns:
+    vrt = px["VRT"].dropna()
+    if len(vrt) > 0:
+        # require at least ~3 years of data
+        min_days = 252 * 3
+
+        # recent 1Y coverage
+        recent_window = 252
+        recent = px["VRT"].iloc[-recent_window:]
+        recent_cov = float(recent.notna().mean())
+
+        # last date must be current
+        last_ok = (vrt.index[-1].date() == px.index[-1].date())
+
+        if (len(vrt) >= min_days) and (recent_cov >= 0.98) and last_ok:
+            infra_enabled = True
 
 # Returns / weekly
 ret_d = px.pct_change().fillna(0.0)
