@@ -1,25 +1,27 @@
 {
-  "date": "2026-03-19",
-  "risk_budget": 0.5,
+  "date": "2026-03-20",
+  "risk_budget": 0.0,
   "eligible": {
     "platforms": [],
     "ai_semis": [],
     "equip": [],
-    "memory": [],
+    "memory": [
+      "MU"
+    ],
     "infra": [
       "VRT"
     ]
   },
   "state_counts_on": {
     "MSFT": 0,
-    "GOOGL": 6,
-    "META": 1,
-    "NVDA": 15,
-    "AMD": 5,
-    "KLAC": 11,
+    "GOOGL": 5,
+    "META": 0,
+    "NVDA": 14,
+    "AMD": 4,
+    "KLAC": 10,
     "MU": 24,
-    "WDC": 21,
-    "STX": 16,
+    "WDC": 20,
+    "STX": 15,
     "VRT": 30
   }
 }
