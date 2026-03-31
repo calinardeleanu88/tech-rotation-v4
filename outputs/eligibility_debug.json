@@ -1,5 +1,5 @@
 {
-  "date": "2026-03-30",
+  "date": "2026-03-31",
   "risk_budget": 0.0,
   "eligible": {
     "platforms": [],
@@ -10,7 +10,6 @@
       "KLAC"
     ],
     "memory": [
-      "MU",
       "WDC",
       "STX"
     ],
@@ -22,10 +21,10 @@
     "MSFT": 0,
     "GOOGL": 0,
     "META": 0,
-    "NVDA": 8,
-    "AMD": 2,
-    "KLAC": 13,
-    "MU": 24,
+    "NVDA": 7,
+    "AMD": 3,
+    "KLAC": 14,
+    "MU": 23,
     "WDC": 19,
     "STX": 14,
     "VRT": 30
