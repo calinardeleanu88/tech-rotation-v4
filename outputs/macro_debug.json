@@ -1,7 +1,7 @@
 {
-  "date": "2026-04-09",
-  "risk_budget": 0.5,
-  "qqq_gate": false,
+  "date": "2026-04-10",
+  "risk_budget": 1.0,
+  "qqq_gate": true,
   "spy_gate": true,
   "emergency_today": false,
   "traded_today": false
