@@ -1,5 +1,5 @@
 {
-  "date": "2026-04-10",
+  "date": "2026-04-13",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [],
@@ -20,11 +20,11 @@
     "GOOGL": 0,
     "META": 0,
     "NVDA": 0,
-    "AMD": 10,
+    "AMD": 11,
     "KLAC": 21,
-    "MU": 16,
+    "MU": 15,
     "WDC": 19,
     "STX": 14,
-    "VRT": 23
+    "VRT": 22
   }
 }
