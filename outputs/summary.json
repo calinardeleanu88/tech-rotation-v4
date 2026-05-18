@@ -1,17 +1,17 @@
 {
   "period_start": "2012-05-21",
-  "period_end": "2026-05-15",
-  "cagr": 0.12174799870989017,
-  "maxdd": -0.309211486204077,
-  "vol": 0.14828177087143493,
-  "sharpe": 0.8505718787838813,
-  "sortino": 1.0530133427489723,
-  "turnover_annual": 5.863814620838263,
-  "avg_def_weight": 0.7636295604199457,
-  "avg_risk_weight": 0.23637043958005433,
+  "period_end": "2026-05-18",
+  "cagr": 0.12163625116029886,
+  "maxdd": -0.3092114921614798,
+  "vol": 0.14826333496396413,
+  "sharpe": 0.8502208556024009,
+  "sortino": 1.0524269024492627,
+  "turnover_annual": 5.862147626861862,
+  "avg_def_weight": 0.7636967492885017,
+  "avg_risk_weight": 0.23630325071149827,
   "churn_flags": 906,
   "infra_enabled": true,
   "used_stooq_vrt": false,
   "stooq_vrt_error": "Unexpected Stooq response for vrt.us",
-  "latest_date": "2026-05-15"
+  "latest_date": "2026-05-18"
 }
