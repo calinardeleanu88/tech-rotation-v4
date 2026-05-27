@@ -1,5 +1,5 @@
 {
-  "date": "2026-05-26",
+  "date": "2026-05-27",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [
@@ -28,7 +28,7 @@
     "NVDA": 30,
     "AMD": 30,
     "KLAC": 30,
-    "MU": 28,
+    "MU": 29,
     "WDC": 30,
     "STX": 30,
     "VRT": 30
