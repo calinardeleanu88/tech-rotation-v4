@@ -1,10 +1,10 @@
 {
-  "date": "2026-06-08",
+  "date": "2026-06-09",
   "mem_trend_ok": true,
   "mem_rs_ok": true,
   "mem_mom_ok": true,
   "mem_shock": false,
   "mem_weight_cap_base": 0.2,
-  "mem_rs_value": 0.5065729837368573,
-  "mem_roc_3m": 1.3029705840216659
+  "mem_rs_value": 0.4623554374259189,
+  "mem_roc_3m": 1.1319408390790726
 }
