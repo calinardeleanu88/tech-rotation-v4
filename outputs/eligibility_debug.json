@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-10",
+  "date": "2026-07-13",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [
@@ -8,9 +8,7 @@
     "ai_semis": [
       "AMD"
     ],
-    "equip": [
-      "KLAC"
-    ],
+    "equip": [],
     "memory": [],
     "infra": [
       "VRT"
@@ -18,14 +16,14 @@
   },
   "state_counts_on": {
     "MSFT": 5,
-    "GOOGL": 4,
-    "META": 1,
-    "NVDA": 7,
+    "GOOGL": 3,
+    "META": 2,
+    "NVDA": 6,
     "AMD": 30,
-    "KLAC": 30,
-    "MU": 29,
-    "WDC": 28,
-    "STX": 28,
-    "VRT": 8
+    "KLAC": 29,
+    "MU": 28,
+    "WDC": 27,
+    "STX": 27,
+    "VRT": 9
   }
 }
