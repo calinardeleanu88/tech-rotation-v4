@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-15",
+  "date": "2026-07-16",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [
@@ -7,6 +7,7 @@
       "META"
     ],
     "ai_semis": [
+      "NVDA",
       "AMD"
     ],
     "equip": [],
@@ -16,15 +17,15 @@
     ]
   },
   "state_counts_on": {
-    "MSFT": 3,
+    "MSFT": 2,
     "GOOGL": 3,
-    "META": 4,
+    "META": 5,
     "NVDA": 4,
     "AMD": 30,
-    "KLAC": 27,
-    "MU": 26,
-    "WDC": 25,
-    "STX": 25,
-    "VRT": 11
+    "KLAC": 26,
+    "MU": 25,
+    "WDC": 24,
+    "STX": 24,
+    "VRT": 12
   }
 }
