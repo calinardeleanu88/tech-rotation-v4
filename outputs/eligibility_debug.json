@@ -1,9 +1,8 @@
 {
-  "date": "2026-07-21",
+  "date": "2026-07-22",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [
-      "GOOGL",
       "META"
     ],
     "ai_semis": [
@@ -17,13 +16,13 @@
   "state_counts_on": {
     "MSFT": 0,
     "GOOGL": 6,
-    "META": 8,
-    "NVDA": 4,
+    "META": 9,
+    "NVDA": 5,
     "AMD": 30,
-    "KLAC": 23,
-    "MU": 22,
-    "WDC": 21,
-    "STX": 21,
+    "KLAC": 22,
+    "MU": 21,
+    "WDC": 20,
+    "STX": 20,
     "VRT": 13
   }
 }
