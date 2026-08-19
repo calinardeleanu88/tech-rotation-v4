@@ -1,28 +1,29 @@
 {
-  "date": "2026-08-18",
+  "date": "2026-08-19",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [
-      "MSFT",
-      "GOOGL"
+      "MSFT"
     ],
     "ai_semis": [
       "NVDA"
     ],
     "equip": [],
-    "memory": [],
+    "memory": [
+      "STX"
+    ],
     "infra": []
   },
   "state_counts_on": {
-    "MSFT": 13,
+    "MSFT": 14,
     "GOOGL": 13,
     "META": 10,
-    "NVDA": 24,
-    "AMD": 14,
-    "KLAC": 3,
-    "MU": 2,
-    "WDC": 1,
+    "NVDA": 25,
+    "AMD": 13,
+    "KLAC": 2,
+    "MU": 1,
+    "WDC": 0,
     "STX": 1,
-    "VRT": 8
+    "VRT": 7
   }
 }
