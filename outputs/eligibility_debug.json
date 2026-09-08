@@ -1,9 +1,10 @@
 {
-  "date": "2026-09-04",
+  "date": "2026-09-08",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [
-      "MSFT"
+      "MSFT",
+      "META"
     ],
     "ai_semis": [
       "NVDA"
@@ -15,13 +16,13 @@
     "infra": []
   },
   "state_counts_on": {
-    "MSFT": 26,
+    "MSFT": 27,
     "GOOGL": 7,
-    "META": 0,
+    "META": 1,
     "NVDA": 30,
-    "AMD": 1,
+    "AMD": 0,
     "KLAC": 0,
-    "MU": 12,
+    "MU": 13,
     "WDC": 0,
     "STX": 0,
     "VRT": 0
