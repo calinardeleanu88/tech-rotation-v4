@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-15",
+  "date": "2026-09-16",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [
@@ -19,11 +19,11 @@
   "state_counts_on": {
     "MSFT": 30,
     "GOOGL": 7,
-    "META": 6,
+    "META": 7,
     "NVDA": 30,
-    "AMD": 1,
+    "AMD": 2,
     "KLAC": 0,
-    "MU": 18,
+    "MU": 19,
     "WDC": 0,
     "STX": 0,
     "VRT": 0
