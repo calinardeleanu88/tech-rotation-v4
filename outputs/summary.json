@@ -1,17 +1,17 @@
 {
   "period_start": "2012-05-21",
-  "period_end": "2026-10-05",
-  "cagr": 0.13372124230547655,
-  "maxdd": -0.3092118443066937,
-  "vol": 0.14801229089160806,
-  "sharpe": 0.9240837359470556,
-  "sortino": 1.1522237428963875,
-  "turnover_annual": 5.781286968697704,
-  "avg_def_weight": 0.7632827904196622,
-  "avg_risk_weight": 0.23671720958033782,
-  "churn_flags": 925,
+  "period_end": "2026-10-06",
+  "cagr": 0.1338547081895498,
+  "maxdd": -0.30921161563012833,
+  "vol": 0.14799233496825617,
+  "sharpe": 0.9249126684578708,
+  "sortino": 1.1531021761600662,
+  "turnover_annual": 5.779688261114052,
+  "avg_def_weight": 0.7631177513812797,
+  "avg_risk_weight": 0.23688224861872031,
+  "churn_flags": 926,
   "infra_enabled": true,
   "used_stooq_vrt": false,
   "stooq_vrt_error": "404 Client Error: Not Found for url: https://stooq.com/q/d/l/?s=vrt.us&i=d",
-  "latest_date": "2026-10-05"
+  "latest_date": "2026-10-06"
 }
