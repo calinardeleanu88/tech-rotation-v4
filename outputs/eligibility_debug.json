@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-15",
+  "date": "2026-10-16",
   "risk_budget": 1.0,
   "eligible": {
     "platforms": [
@@ -11,9 +11,7 @@
       "NVDA",
       "AMD"
     ],
-    "equip": [
-      "KLAC"
-    ],
+    "equip": [],
     "memory": [
       "MU"
     ],
@@ -21,10 +19,10 @@
   },
   "state_counts_on": {
     "MSFT": 30,
-    "GOOGL": 18,
-    "META": 28,
+    "GOOGL": 19,
+    "META": 29,
     "NVDA": 30,
-    "AMD": 23,
+    "AMD": 24,
     "KLAC": 13,
     "MU": 30,
     "WDC": 2,
