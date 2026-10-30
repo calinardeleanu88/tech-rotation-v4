@@ -1,17 +1,17 @@
 {
   "period_start": "2012-05-21",
-  "period_end": "2026-10-29",
-  "cagr": 0.13030181764461735,
-  "maxdd": -0.30921176551871077,
-  "vol": 0.14812610683963204,
-  "sharpe": 0.9027055833161906,
-  "sortino": 1.1243536891507644,
-  "turnover_annual": 5.8405808500442085,
-  "avg_def_weight": 0.7622991936242638,
-  "avg_risk_weight": 0.2377008063757362,
+  "period_end": "2026-10-30",
+  "cagr": 0.1306697215303816,
+  "maxdd": -0.30921171849466866,
+  "vol": 0.14811053913543382,
+  "sharpe": 0.9049161648435822,
+  "sortino": 1.126989007084847,
+  "turnover_annual": 5.838973247021187,
+  "avg_def_weight": 0.7623646218671418,
+  "avg_risk_weight": 0.23763537813285818,
   "churn_flags": 932,
   "infra_enabled": true,
   "used_stooq_vrt": false,
-  "stooq_vrt_error": "404 Client Error: Not Found for url: https://stooq.com/q/d/l/?s=vrt.us&i=d",
-  "latest_date": "2026-10-29"
+  "stooq_vrt_error": "HTTPSConnectionPool(host='stooq.com', port=443): Max retries exceeded with url: /q/d/l/?s=vrt.us&i=d (Caused by ConnectTimeoutError(<HTTPSConnection(host='stooq.com', port=443) at 0x759555bb3090>, 'Connection to stooq.com timed out. (connect timeout=30)'))",
+  "latest_date": "2026-10-30"
 }
