@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-19",
-  "risk_budget": 0.5,
+  "date": "2026-11-20",
+  "risk_budget": 0.0,
   "eligible": {
     "platforms": [],
     "ai_semis": [],
@@ -9,15 +9,15 @@
     "infra": []
   },
   "state_counts_on": {
-    "MSFT": 28,
-    "GOOGL": 10,
-    "META": 11,
-    "NVDA": 8,
-    "AMD": 7,
-    "KLAC": 5,
-    "MU": 6,
+    "MSFT": 27,
+    "GOOGL": 9,
+    "META": 10,
+    "NVDA": 7,
+    "AMD": 6,
+    "KLAC": 4,
+    "MU": 5,
     "WDC": 0,
-    "STX": 2,
+    "STX": 1,
     "VRT": 0
   }
 }
